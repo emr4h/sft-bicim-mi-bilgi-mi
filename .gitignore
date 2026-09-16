@@ -1,0 +1,9 @@
+# Uretilen veri, adaptorler ve test ciktilari
+veri/
+ckpt/
+cikti/
+
+__pycache__/
+*.pyc
+.venv/
+unsloth_compiled_cache/
