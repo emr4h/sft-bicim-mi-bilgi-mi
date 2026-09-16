@@ -33,9 +33,49 @@ SFT"dir; varsayılan yol bu.
 Daha önce 20 örnekle iki eğitim koşmuştum, 10 ve 30 epoch. İkisi de bozuk
 model verdi. 30 epoch ezberledi, 10 epoch hiçbir şey öğrenemedi.
 
-Kayıp eğrisine bakıp *"epoch 10'da durmalıydık"* diye düşündüm. Sonra o
-hipotezi test ettim ve tutmadı — asıl kısıt epoch değildi. Geriye tek
-açıklama kalmış gibi görünüyordu: **veri azdı.**
+### Ezber nasıl görünüyor?
+
+Ezberlemenin (overfitting) tek erken uyarı sinyali **eval_loss**. Veri ikiye
+bölünür; model %90'ıyla eğitilir, %10'unu hiç görmez:
+
+```python
+veri = veri.train_test_split(test_size=0.1, seed=TOHUM)
+```
+
+`train_loss` gördüğü veride ne kadar yanıldığını, `eval_loss` **görmediği**
+veride ne kadar yanıldığını ölçer. Model genellenebilir bir şey öğreniyorsa
+ikisi birlikte düşer; ezberliyorsa yolları ayrılır.
+
+20 örnek, 30 epoch, Qwen3-0.6B — bu depodaki koşudan:
+
+```
+epoch   train_loss   eval_loss
+   5      2.296        2.349
+  10      1.220        1.847
+  15      0.810        1.592    ← eval_loss dibi
+  20      0.530        1.663    ← yükselmeye başladı
+  25      0.343        1.754
+  30      0.270        1.772
+```
+
+Epoch 15'e kadar ikisi de düşüyor. Sonra `train_loss` inmeye devam ederken
+`eval_loss` yükseliyor — model epoch 15'te durmalıydı. Bitişte gördüğü
+veride 0,270, görmediğinde 1,772: **6,5 kat fark.**
+
+Doğrulama seti ayırmak zorunlu değil, ama ayırmazsanız bunu göremezsiniz —
+elinizde yalnızca güzelce düşen bir `train_loss` kalır.
+
+Tekrarlamak için:
+
+```bash
+python egit_lora.py --veri veri/sft_20.jsonl --cikti ckpt/ezber --epoch 30
+```
+
+### Hipotez sırası
+
+Bu eğriyi görünce *"epoch 10'da durmalıydık"* diye düşündüm. Mantıklıydı.
+Test ettim, tutmadı — asıl kısıt epoch değildi. Geriye tek açıklama kalmış
+gibi görünüyordu: **veri azdı.**
 
 Bu sefer onu ölçtüm.
 
